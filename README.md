@@ -1,79 +1,78 @@
 # 🎵 Apple Charts 2024 — SQL Analysis
 
-Apple Music'in **Top Songs of 2024: Global** listesindeki ilk 20 şarkı üzerine kurulmuş,
-MySQL ile veri modelleme ve analiz projesi. Şarkılar, sanatçılar, işbirlikleri, türler ve
-sansürsüz (explicit) içerik bilgisi ilişkisel bir veritabanında modellenmiş; JOIN, GROUP BY,
-CTE (`WITH`) ve window function (`RANK`, `SUM() OVER`) kullanılarak çeşitli sorular
-yanıtlanmıştır.
+A MySQL data modeling and analysis project built on the top 20 songs from Apple Music's
+**Top Songs of 2024: Global** chart. Songs, artists, collaborations, genres, and explicit
+content information are modeled in a relational database; several questions are answered
+using JOINs, GROUP BY, CTEs (`WITH`), and window functions (`RANK`, `SUM() OVER`).
 
-## 📊 Veri Modeli
+## 📊 Data Model
 
-| Tablo | Açıklama |
+| Table | Description |
 |---|---|
-| `Artists` | Sanatçı adı, cinsiyeti, ülkesi |
-| `Songs` | Şarkı adı, ana sanatçı, süre, Apple Charts sırası |
-| `Collabs` | Şarkı başına ek (işbirlikçi) sanatçılar |
-| `Genres` | Şarkı başına müzik türü |
-| `ExclusiveContent` | Sansürsüz (explicit) içerik barındıran şarkılar |
-| `SongFullReport` (view) | Tüm bilgileri tek sorguda birleştiren rapor view'ı |
+| `Artists` | Artist name, gender, country |
+| `Songs` | Song title, main artist, duration, Apple Charts position |
+| `Collabs` | Additional (featured) artists per song |
+| `Genres` | Genre per song |
+| `ExclusiveContent` | Songs containing explicit content |
+| `SongFullReport` (view) | A report view combining all information in a single query |
 
 ```
 Artists ─┬─< Songs ─┬─< Collabs >─┐
          │           ├─< Genres   │
          │           └─< ExclusiveContent
-         └───────────────────────┘ (Collabs.ArtistID de Artists'e bağlanır)
+         └───────────────────────┘ (Collabs.ArtistID also links back to Artists)
 ```
 
-## 🔍 Öne Çıkan Bulgular
+## 🔍 Key Findings
 
-- İlk 20 şarkının sahiplerinin **%85'i ABD'li**; kalan %15 Kanada, İrlanda ve Japonya
-  arasında eşit paylaşılıyor.
-- Sanatçıların **%71'i erkek**, %29'u kadın (21 benzersiz sanatçı bazında). Şarkı
-  bazında bakılırsa (bazı sanatçıların 2 şarkısı var) oran %65 Erkek / %35 Kadın'dır.
-- En popüler tür **Pop** (7 şarkı), onu Hip-Hop ve Country takip ediyor.
-- İlk 20 şarkının **yarısı** sansürsüz (explicit) içerik barındırıyor.
-- İşbirlikli şarkılar (`Like That`, `A Bar Song` vb.) listenin **%20'sini** oluşturuyor
-  (4 benzersiz şarkı; `Like That` iki ayrı işbirlikçiyle 2 satır olduğu için bu satır
-  sayısına göre değil, benzersiz şarkı sayısına göre hesaplanmıştır).
+- **85%** of the top 20 songs' main artists are from the USA; the remaining 15% is split
+  evenly between Canada, Ireland, and Japan.
+- **71%** of artists are male and 29% are female (based on 21 unique artists). Looking at
+  it song-by-song (since some artists have 2 songs), the ratio is 65% Male / 35% Female.
+- The most popular genre is **Pop** (7 songs), followed by Hip-Hop and Country.
+- **Half** of the top 20 songs contain explicit content.
+- Collaborative songs (`Like That`, `A Bar Song`, etc.) make up **20%** of the list
+  (4 unique songs; `Like That` appears as 2 rows because it has 2 separate collaborators,
+  so this is calculated by unique song count, not row count).
 
-## 🧩 Kullanılan SQL Teknikleri
+## 🧩 SQL Techniques Used
 
-- Çok tablolu `JOIN` / `LEFT JOIN`
+- Multi-table `JOIN` / `LEFT JOIN`
 - `GROUP BY` + `HAVING`
-- Toplulaştırma fonksiyonları (`COUNT`, `AVG`, `SEC_TO_TIME`, `TIME_TO_SEC`)
-- **CTE** (`WITH ... AS`) — okunabilir, adım adım sorgular
+- Aggregate functions (`COUNT`, `AVG`, `SEC_TO_TIME`, `TIME_TO_SEC`)
+- **CTE** (`WITH ... AS`) — readable, step-by-step queries
 - **Window functions** — `RANK() OVER (PARTITION BY ...)`, `SUM() OVER (ORDER BY ...)`
-  ile kümülatif oranlar
-- `CREATE VIEW` — tekrar kullanılabilir rapor katmanı
+  for cumulative ratios
+- `CREATE VIEW` — a reusable reporting layer
 
-## 📁 Dosyalar
+## 📁 Files
 
-- [`topsongs_2024_v2.sql`](./topsongs_2024_v2.sql) — veritabanı şeması + tüm sorgular
-- [`generate_charts.py`](./generate_charts.py) — sorgu sonuçlarından grafik üretimi (Python/matplotlib)
-- `charts_dashboard.png` — tüm analizleri tek görselde birleştiren dashboard
+- [`topsongs_2024_v2.sql`](./topsongs_2024_v2.sql) — database schema + all queries
+- [`generate_charts.py`](./generate_charts.py) — chart generation from query results (Python/matplotlib)
+- `charts_dashboard.png` — a single dashboard combining all analyses
 
-## 📈 Görseller
+## 📈 Visuals
 
 ![Dashboard](./charts_dashboard.png)
 
-## ⚙️ Nasıl Çalıştırılır
+## ⚙️ How to Run
 
 ```bash
-# 1. MySQL'de veritabanını kur
+# 1. Set up the database in MySQL
 mysql -u root -p < topsongs_2024_v2.sql
 
-# 2. Grafikleri üret (opsiyonel, Python gerektirir)
+# 2. Generate the charts (optional, requires Python)
 pip install pandas matplotlib
 python3 generate_charts.py
 ```
 
-## 🔗 İlgili Yazı
+## 🔗 Related Post
 
-Bu projenin arka planını ve düşünce sürecini anlatan yazıya [Medium'dan buradan](#) ulaşabilirsiniz.
+You can read the write-up behind this project and the thought process on [Medium here](#).
 
-## 📝 Veri Kaynağı
+## 📝 Data Source
 
-Apple Music, *Top Songs of 2024: Global* yıl sonu listesi (Aralık 2024).
+Apple Music, *Top Songs of 2024: Global* year-end chart (December 2024).
 
 ---
-*Bu proje eğitim/portföy amaçlıdır; tüm şarkı ve sanatçı isimleri ilgili hak sahiplerine aittir.*
+*This project is for educational/portfolio purposes; all song and artist names belong to their respective rights holders.*
