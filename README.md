@@ -68,7 +68,7 @@ python3 generate_charts.py
 
 ## 🔗 Related Post
 
-You can read the write-up behind this project and the thought process on [Medium here](#).
+You can read the write-up behind this project and the thought process on https://medium.com/@sumeyyatas24/learning-sql-with-apple-musics-top-20-songs-of-2024-508587a9a87d
 
 ## 📝 Data Source
 
