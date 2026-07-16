@@ -1,16 +1,16 @@
 -- =====================================================================
 -- APPLE CHARTS 2024 - TOP 20 SONGS ANALYSIS (v2)
 -- =====================================================================
--- Bu dosya, orijinal projenin geliştirilmiş versiyonudur.
--- Eklenenler: CTE (WITH), Window Functions (RANK, ROW_NUMBER),
--- View oluşturma ve ek analitik sorgular.
+-- This file is the enhanced version of the original project.
+-- Additions: CTEs (WITH), window functions (RANK, ROW_NUMBER),
+-- view creation, and additional analytical queries.
 -- =====================================================================
 
 CREATE DATABASE IF NOT EXISTS top_songs_of_2024;
 USE top_songs_of_2024;
 
 -- ---------------------------------------------------------------------
--- TABLO YAPISI
+-- TABLE STRUCTURE
 -- ---------------------------------------------------------------------
 
 CREATE TABLE Artists (
@@ -54,8 +54,8 @@ CREATE TABLE Songs (
     FOREIGN KEY (ArtistID) REFERENCES Artists(ArtistID)
 );
 
--- DÜZELTME: 10. sıradaki şarkının doğru adı "Bling-Bang-Bang-Born" olarak güncellendi
--- (kaynak: Apple Music Top Songs of 2024: Global resmi listesi)
+-- FIX: the title of the song at position 10 was corrected to "Bling-Bang-Bang-Born"
+-- (source: Apple Music Top Songs of 2024: Global official chart)
 INSERT INTO Songs (Title, ArtistID, AppleChartsPosition, Duration)
 VALUES
 ('Not Like Us', 1, 1, '00:04:34'),
@@ -115,17 +115,17 @@ VALUES (1), (3), (4), (6), (8), (11), (12), (14), (16), (18);
 
 
 -- =====================================================================
--- TEMEL SORGULAR (v1'den korunmuştur)
+-- BASIC QUERIES (carried over from v1)
 -- =====================================================================
 
--- Türlere göre şarkı sayısı
+-- Number of songs per genre
 SELECT Genre, COUNT(SongID) AS NumberOfSongs
 FROM Genres
 GROUP BY Genre
 HAVING COUNT(SongID) >= 1
 ORDER BY NumberOfSongs DESC;
 
--- Şarkı - sanatçı - işbirlikçi tablosu
+-- Song - artist - collaborator table
 SELECT
     Songs.AppleChartsPosition,
     Songs.Title AS Song,
@@ -138,7 +138,7 @@ LEFT JOIN Collabs ON Songs.SongID = Collabs.SongID
 LEFT JOIN Artists AS Collaborators ON Collabs.ArtistID = Collaborators.ArtistID
 ORDER BY Songs.AppleChartsPosition;
 
--- Cinsiyete göre şarkı sayısı
+-- Number of songs by gender
 SELECT
     Artists.Gender AS Artists_Gender,
     COUNT(Songs.SongID) AS Song_Count
@@ -147,10 +147,10 @@ JOIN Artists ON Songs.ArtistID = Artists.ArtistID
 GROUP BY Artists.Gender
 ORDER BY Song_Count DESC;
 
--- Sanatçı - ülke
+-- Artist - country
 SELECT Name AS Artist, Country FROM Artists;
 
--- Exclusive content durumu
+-- Explicit content status
 SELECT
     Songs.Title AS Song,
     Artists.Name AS Artist,
@@ -162,14 +162,14 @@ ORDER BY Songs.AppleChartsPosition;
 
 
 -- =====================================================================
--- YENİ SORGULAR (v2) — CTE, WINDOW FUNCTIONS, VIEW
+-- NEW QUERIES (v2) — CTE, WINDOW FUNCTIONS, VIEW
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1) Her türün en yüksek sıradaki (en popüler) şarkısı — WINDOW FUNCTION
+-- 1) The top-ranked (most popular) song of each genre — WINDOW FUNCTION
 -- ---------------------------------------------------------------------
--- RANK() ile her Genre içinde AppleChartsPosition'a göre sıralama yapılır,
--- sadece o türün "temsilci" (en üstteki) şarkısı listelenir.
+-- RANK() is used to rank songs within each Genre by AppleChartsPosition,
+-- and only the "representative" (top-ranked) song of that genre is listed.
 WITH RankedByGenre AS (
     SELECT
         g.Genre,
@@ -186,10 +186,10 @@ ORDER BY AppleChartsPosition;
 
 
 -- ---------------------------------------------------------------------
--- 2) İşbirlikli vs Solo şarkıların ortalama süresi — CTE
+-- 2) Average duration of collaborative vs. solo songs — CTE
 -- ---------------------------------------------------------------------
--- Önce her şarkının işbirlikli olup olmadığını CTE'de belirliyoruz,
--- sonra bu iki grubun ortalama süresini karşılaştırıyoruz.
+-- First we determine in a CTE whether each song is a collaboration,
+-- then we compare the average duration of the two groups.
 WITH SongCollabFlag AS (
     SELECT
         s.SongID,
@@ -207,10 +207,10 @@ GROUP BY SongType;
 
 
 -- ---------------------------------------------------------------------
--- 3) Kümülatif "Exclusive Content" oranı — WINDOW FUNCTION
+-- 3) Cumulative "explicit content" ratio — WINDOW FUNCTION
 -- ---------------------------------------------------------------------
--- Sıralamada aşağı indikçe, o ana kadarki exclusive content oranının
--- nasıl değiştiğini gösterir (running percentage).
+-- Shows how the running percentage of explicit content changes as you
+-- move down the chart.
 SELECT
     s.AppleChartsPosition,
     s.Title,
@@ -225,7 +225,7 @@ ORDER BY s.AppleChartsPosition;
 
 
 -- ---------------------------------------------------------------------
--- 4) Sanatçı başına toplam şarkı sayısı (ana sanatçı + işbirlikçi) — WINDOW FUNCTION
+-- 4) Total song count per artist (main artist + collaborator) — WINDOW FUNCTION
 -- ---------------------------------------------------------------------
 WITH AllAppearances AS (
     SELECT ArtistID, SongID FROM Songs
@@ -243,7 +243,7 @@ ORDER BY TotalAppearances DESC;
 
 
 -- ---------------------------------------------------------------------
--- 5) Ülkelere göre sanatçı yüzdesi — WINDOW FUNCTION
+-- 5) Artist percentage by country — WINDOW FUNCTION
 -- ---------------------------------------------------------------------
 SELECT
     Country,
@@ -255,12 +255,12 @@ ORDER BY ArtistCount DESC;
 
 
 -- ---------------------------------------------------------------------
--- 5b) DOĞRU işbirliği yüzdesi — benzersiz şarkı sayısına göre
+-- 5b) CORRECT collaboration percentage — based on unique song count
 -- ---------------------------------------------------------------------
--- DİKKAT: Collabs tablosunda "Like That" (SongID=8) için 2 satır var
--- (2 farklı işbirlikçi: Metro Boomin ve Kendrick Lamar). COUNT(*) ile
--- satır sayısını almak bu şarkıyı 2 kez sayar ve yanlışlıkla %25 çıkarır.
--- Doğrusu, COUNT(DISTINCT SongID) ile benzersiz şarkı sayısını almaktır (%20).
+-- NOTE: the Collabs table has 2 rows for "Like That" (SongID=8)
+-- (2 different collaborators: Metro Boomin and Kendrick Lamar). Using
+-- COUNT(*) counts this row count and mistakenly gives 25%. The correct
+-- approach is to use COUNT(DISTINCT SongID) to get the unique song count (20%).
 SELECT
     COUNT(DISTINCT SongID) AS UniqueCollabSongs,
     (SELECT COUNT(*) FROM Songs) AS TotalSongs,
@@ -268,9 +268,9 @@ SELECT
 FROM Collabs;
 
 -- ---------------------------------------------------------------------
--- 5c) Cinsiyet dağılımı — iki farklı metrik (sanatçı bazlı vs şarkı bazlı)
+-- 5c) Gender distribution — two different metrics (artist-based vs. song-based)
 -- ---------------------------------------------------------------------
--- Sanatçı bazlı: 21 benzersiz sanatçının cinsiyet dağılımı (%71 Erkek / %29 Kadın)
+-- Artist-based: gender distribution among 21 unique artists (71% Male / 29% Female)
 SELECT
     Gender,
     COUNT(*) AS ArtistCount,
@@ -278,9 +278,9 @@ SELECT
 FROM Artists
 GROUP BY Gender;
 
--- Şarkı bazlı: 20 şarkının ana sanatçısının cinsiyetine göre (%65 Erkek / %35 Kadın)
--- (Sabrina Carpenter ve Taylor Swift'in 2'şer şarkısı olduğu için sanatçı bazlı
--- orandan farklı çıkar)
+-- Song-based: based on the main artist's gender for each of the 20 songs
+-- (65% Male / 35% Female). This differs from the artist-based ratio because
+-- Sabrina Carpenter and Taylor Swift each have 2 songs.
 SELECT
     a.Gender,
     COUNT(*) AS SongCount,
@@ -291,10 +291,10 @@ GROUP BY a.Gender;
 
 
 -- ---------------------------------------------------------------------
--- 6) Tekrar kullanılabilir rapor: VIEW oluşturma
+-- 6) Reusable report: creating a VIEW
 -- ---------------------------------------------------------------------
--- Bu view, şarkı + sanatçı + tür + exclusive content bilgisini tek
--- seferde döndürür; ileride tekrar tekrar JOIN yazmaya gerek kalmaz.
+-- This view returns song + artist + genre + explicit content information
+-- in a single query, so there's no need to keep rewriting the same JOINs.
 CREATE OR REPLACE VIEW SongFullReport AS
 SELECT
     s.AppleChartsPosition,
@@ -309,8 +309,8 @@ JOIN Artists a ON s.ArtistID = a.ArtistID
 LEFT JOIN Genres g ON s.SongID = g.SongID
 LEFT JOIN ExclusiveContent ec ON s.SongID = ec.SongID;
 
--- Kullanım örneği:
+-- Usage example:
 SELECT * FROM SongFullReport ORDER BY AppleChartsPosition;
 
--- Ortalama süre (v1'den)
+-- Average duration (from v1)
 SELECT SEC_TO_TIME(AVG(TIME_TO_SEC(Duration))) AS AverageDuration FROM Songs;
