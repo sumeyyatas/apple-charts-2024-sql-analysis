@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 plt.rcParams["font.family"] = "DejaVu Sans"
 
-# ---- Data (aynı SQL verisinden) ----
+# ---- Data (same as in the SQL file) ----
 artists = pd.DataFrame([
     (1,'Kendrick Lamar','Male','USA'),(2,'Taylor Swift','Female','USA'),
     (3,'Billie Eilish','Female','USA'),(4,'Benson Boone','Male','USA'),
@@ -35,47 +35,47 @@ genres = pd.DataFrame([
     (18,'Pop'),(19,'R&B'),(20,'Pop'),
 ], columns=['SongPos','Genre'])
 
-exclusive_ids = {1,3,4,6,8,11,12,14,16,18}  # AppleChartsPosition bazlı
+exclusive_ids = {1,3,4,6,8,11,12,14,16,18}  # based on AppleChartsPosition
 
 COLORS = ['#5B8FF9','#61DDAA','#F6BD16','#F6903D','#E8684A','#6DC8EC','#9270CA']
 
-# Tek bir dashboard görseli — 4 grafik 2x2 grid halinde
+# A single dashboard image — 4 charts in a 2x2 grid
 fig, axes = plt.subplots(2, 2, figsize=(13, 10))
-fig.suptitle("Apple Charts 2024 — Top 20 Şarkı Analizi", fontsize=16, fontweight='bold', y=0.98)
+fig.suptitle("Apple Charts 2024 — Top 20 Songs Analysis", fontsize=16, fontweight='bold', y=0.98)
 
 # 1) Genre distribution (top-left)
 ax = axes[0, 0]
 genre_counts = genres['Genre'].value_counts()
 ax.barh(genre_counts.index[::-1], genre_counts.values[::-1], color=COLORS[0])
-ax.set_title("Tür Dağılımı", fontsize=12, fontweight='bold')
-ax.set_xlabel("Şarkı Sayısı")
+ax.set_title("Genre Distribution", fontsize=12, fontweight='bold')
+ax.set_xlabel("Number of Songs")
 for i, v in enumerate(genre_counts.values[::-1]):
     ax.text(v + 0.05, i, str(v), va='center', fontsize=9)
 
-# 2) Gender distribution (top-right) — sanatçı bazlı
+# 2) Gender distribution (top-right) — artist-based
 ax = axes[0, 1]
 gender_counts = artists['Gender'].value_counts()
 ax.pie(gender_counts.values, labels=gender_counts.index, autopct='%1.0f%%',
        colors=['#5B8FF9', '#F6BD16'], startangle=90, textprops={'fontsize': 10})
-ax.set_title("Cinsiyet Dağılımı (sanatçı bazlı)", fontsize=12, fontweight='bold')
+ax.set_title("Gender Distribution (artist-based)", fontsize=12, fontweight='bold')
 
 # 3) Country distribution (bottom-left)
 ax = axes[1, 0]
 country_counts = artists['Country'].value_counts()
 ax.pie(country_counts.values, labels=country_counts.index, autopct='%1.0f%%',
        colors=COLORS, startangle=90, textprops={'fontsize': 10})
-ax.set_title("Ülkelere Göre Dağılım", fontsize=12, fontweight='bold')
+ax.set_title("Distribution by Country", fontsize=12, fontweight='bold')
 
-# 4) Exclusive content (bottom-right)
+# 4) Explicit content (bottom-right)
 ax = axes[1, 1]
 exclusive_flags = songs['AppleChartsPosition'].apply(lambda x: 'Yes' if x in exclusive_ids else 'No')
 exc_counts = exclusive_flags.value_counts()
 ax.pie(exc_counts.values, labels=exc_counts.index, autopct='%1.0f%%',
        colors=['#61DDAA', '#E8684A'], startangle=90, textprops={'fontsize': 10})
-ax.set_title("Sansürsüz İçerik Oranı", fontsize=12, fontweight='bold')
+ax.set_title("Explicit Content Ratio", fontsize=12, fontweight='bold')
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.savefig("charts_dashboard.png", dpi=150)
 plt.close()
 
-print("Dashboard grafiği oluşturuldu: charts_dashboard.png")
+print("Dashboard chart created: charts_dashboard.png")
